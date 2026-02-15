@@ -7,6 +7,7 @@
 }:
 let
   inherit (lib) types;
+  bundleLib = import ../lib.nix lib;
 
   cfg = config.bundle;
 
@@ -18,13 +19,13 @@ let
   bundleModule = types.submoduleWith {
     description = "Nixxy module";
     class = "bundle";
-    specialArgs = { inherit inputs self; };
+    specialArgs = { inherit inputs self bundleLib; };
 
     modules = [
       (
-        { bundleLib, ... }:
+        { bundleInfo, ... }:
         let
-          inherit (bundleLib) system;
+          inherit (bundleInfo) system;
           # using custom defined inputs' and self' as using `withSystem` causes infinite recursion
           inputs' = lib.mapAttrs (_: lib.mapAttrs (_: v: v.${system} or v)) inputs;
           self' = inputs'.self;

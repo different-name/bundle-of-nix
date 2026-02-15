@@ -21,7 +21,7 @@ in
             apply =
               value:
               lib.mapAttrs (hostAttr: _: {
-                _module.args.bundleLib = { inherit (cfg.hosts.${hostAttr}) system; };
+                _module.args.bundleInfo = { inherit (cfg.hosts.${hostAttr}) system; };
                 imports = [ value.${hostAttr} ];
               }) value;
             # TODO documentation
