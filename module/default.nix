@@ -61,7 +61,12 @@ let
           mappedHomeModules = lib.concatLists (
             lib.mapAttrsToList (
               userAttr: homeModules:
-              map (homeModule: lib.setAttrByPath (usersAttrPath ++ [ userAttr ]) homeModule) homeModules
+              let
+                extraHomeConfig = withSystem host.system homeClass.extraHomeConfig;
+              in
+              map (homeModule: lib.setAttrByPath (usersAttrPath ++ [ userAttr ]) homeModule) (
+                homeModules ++ [ extraHomeConfig ]
+              )
             ) userConfigs
           );
 

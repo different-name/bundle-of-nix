@@ -13,6 +13,13 @@ let
   nix-darwin = getInput "nix-darwin";
   home-manager = inputs.home-manager or (throw "No home-manager input found");
   hjem = inputs.hjem or (throw "No hjem input found");
+
+  specialArgs = _: { inherit inputs self; };
+  primeArgsConfig =
+    { inputs', self', ... }:
+    {
+      _module.args = { inherit inputs' self'; };
+    };
 in
 {
   options.bundle = {
@@ -107,6 +114,12 @@ in
                   # TODO documentation
                 };
               };
+
+              extraHomeConfig = lib.mkOption {
+                type = types.raw;
+                default = _: { };
+                # TODO documentation
+              };
             };
           }
         )
@@ -117,28 +130,21 @@ in
   };
 
   config.bundle = {
-    systemClasses =
-      let
-        specialArgs = _: { inherit inputs self; };
-        extraConfig =
-          { inputs', self', ... }:
-          {
-            _module.args = { inherit inputs' self'; };
-          };
-      in
-      {
-        nixos = {
-          mkSystem = nixpkgs.lib.nixosSystem;
-          inherit specialArgs extraConfig;
-          flakeAttribute = "nixosConfigurations";
-        };
-
-        darwin = {
-          mkSystem = nix-darwin.lib.darwinSystem;
-          inherit specialArgs extraConfig;
-          flakeAttribute = "darwinConfigurations";
-        };
+    systemClasses = {
+      nixos = {
+        mkSystem = nixpkgs.lib.nixosSystem;
+        inherit specialArgs;
+        extraConfig = primeArgsConfig;
+        flakeAttribute = "nixosConfigurations";
       };
+
+      darwin = {
+        mkSystem = nix-darwin.lib.darwinSystem;
+        inherit specialArgs;
+        extraConfig = primeArgsConfig;
+        flakeAttribute = "darwinConfigurations";
+      };
+    };
 
     homeClasses = {
       home-manager = {
@@ -148,24 +154,17 @@ in
             "users"
           ];
 
-          extraConfig =
-            { inputs', self', ... }:
-            {
-              home-manager.extraSpecialArgs = {
-                inherit
-                  inputs
-                  inputs'
-                  self
-                  self'
-                  ;
-              };
-            };
+          extraConfig = _: {
+            home-manager.extraSpecialArgs = { inherit inputs self; };
+          };
 
           classes = {
             nixos.module = home-manager.nixosModules.default;
             darwin.module = home-manager.darwinModules.default;
           };
         };
+
+        extraHomeConfig = primeArgsConfig;
       };
 
       hjem = {
@@ -175,24 +174,15 @@ in
             "users"
           ];
 
-          extraConfig =
-            { inputs', self', ... }:
-            {
-              hjem.specialArgs = {
-                inherit
-                  inputs
-                  inputs'
-                  self
-                  self'
-                  ;
-              };
-            };
+          extraConfig = _: { hjem = { inherit specialArgs; }; };
 
           classes = {
             nixos.module = hjem.nixosModules.default;
             darwin.module = hjem.darwinModules.default;
           };
         };
+
+        extraHomeConfig = primeArgsConfig;
       };
     };
   };
