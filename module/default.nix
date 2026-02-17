@@ -1,8 +1,6 @@
 {
   lib,
   config,
-  inputs,
-  self,
   withSystem,
   ...
 }:
@@ -10,15 +8,6 @@ let
   inherit (lib) types;
 
   cfg = config.bundle;
-
-  genPrimeArgs =
-    system:
-    withSystem system (
-      { inputs', self', ... }:
-      {
-        inherit inputs' self';
-      }
-    );
 
   deconstructedConfigData = lib.mapAttrsToList (
     hostAttr: host:
@@ -28,7 +17,7 @@ let
 
       validHomeClasses = lib.filter (
         homeClass:
-        (lib.hasAttr host.class homeClass.systemClasses) && (finalConfig.${homeClass.namespace} != [ ])
+        (lib.hasAttr host.class homeClass.system.classes) && (finalConfig.${homeClass.namespace} != [ ])
       ) (lib.attrValues cfg.homeClasses);
 
       homeConfigs =
@@ -64,19 +53,25 @@ let
       finalHomeModules = lib.concatMap (
         homeClass:
         let
-          systemClassCfg = homeClass.systemClasses.${host.class};
+          systemClassCfg = homeClass.system.classes.${host.class};
           systemModule = systemClassCfg.module;
-          inherit (systemClassCfg) attrPath;
+          inherit (systemClassCfg) usersAttrPath;
 
           userConfigs = homeConfigs.${homeClass.namespace};
           mappedHomeModules = lib.concatLists (
             lib.mapAttrsToList (
               userAttr: homeModules:
-              map (homeModule: lib.setAttrByPath (attrPath ++ [ userAttr ]) homeModule) homeModules
+              map (homeModule: lib.setAttrByPath (usersAttrPath ++ [ userAttr ]) homeModule) homeModules
             ) userConfigs
           );
+
+          extraConfig = withSystem host.system homeClass.system.extraConfig;
         in
-        [ systemModule ] ++ mappedHomeModules
+        [
+          systemModule
+          extraConfig
+        ]
+        ++ mappedHomeModules
       ) validHomeClasses;
 
       modules = finalConfig.${class.namespace} ++ finalHomeModules;
@@ -86,8 +81,8 @@ let
         inherit (class) mkSystem;
 
         args = {
-          specialArgs = { inherit inputs self; };
-          modules = [ { _module.args = genPrimeArgs host.system; } ] ++ modules;
+          specialArgs = withSystem host.system class.specialArgs;
+          modules = [ (withSystem host.system class.extraConfig) ] ++ modules;
         };
       };
     }

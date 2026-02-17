@@ -1,4 +1,9 @@
-{ lib, inputs, ... }:
+{
+  lib,
+  inputs,
+  self,
+  ...
+}:
 let
   inherit (lib) types;
 
@@ -32,6 +37,18 @@ in
                 type = types.raw;
                 # TODO documentation
               };
+
+              specialArgs = lib.mkOption {
+                type = types.raw;
+                default = _: { };
+                # TODO documentation
+              };
+
+              extraConfig = lib.mkOption {
+                type = types.raw;
+                default = _: { };
+                # TODO documentation
+              };
             };
           }
         )
@@ -52,29 +69,43 @@ in
                 # TODO documentation
               };
 
-              attrPath = lib.mkOption {
-                type = types.listOf types.str;
-                # TODO documentation
-              };
+              system = {
+                usersAttrPath = lib.mkOption {
+                  type = types.listOf types.str;
+                  # TODO documentation
+                };
 
-              systemClasses = lib.mkOption {
-                type = types.attrsOf (
-                  types.submodule {
-                    options = {
-                      module = lib.mkOption {
-                        type = types.deferredModule;
-                        # TODO documentation
-                      };
+                extraConfig = lib.mkOption {
+                  type = types.raw;
+                  default = _: { };
+                  # TODO documentation
+                };
 
-                      attrPath = lib.mkOption {
-                        type = types.listOf types.str;
-                        default = config.attrPath;
-                        # TODO documentation
+                classes = lib.mkOption {
+                  type = types.attrsOf (
+                    types.submodule {
+                      options = {
+                        module = lib.mkOption {
+                          type = types.deferredModule;
+                          # TODO documentation
+                        };
+
+                        usersAttrPath = lib.mkOption {
+                          type = types.listOf types.str;
+                          default = config.system.usersAttrPath;
+                          # TODO documentation
+                        };
+
+                        extraConfig = lib.mkOption {
+                          type = types.raw;
+                          default = config.system.extraConfig;
+                          # TODO documentation
+                        };
                       };
-                    };
-                  }
-                );
-                # TODO documentation
+                    }
+                  );
+                  # TODO documentation
+                };
               };
             };
           }
@@ -86,40 +117,81 @@ in
   };
 
   config.bundle = {
-    systemClasses = {
-      nixos = {
-        mkSystem = nixpkgs.lib.nixosSystem;
-        flakeAttribute = "nixosConfigurations";
-      };
+    systemClasses =
+      let
+        specialArgs = _: { inherit inputs self; };
+        extraConfig =
+          { inputs', self', ... }:
+          {
+            _module.args = { inherit inputs' self'; };
+          };
+      in
+      {
+        nixos = {
+          mkSystem = nixpkgs.lib.nixosSystem;
+          inherit specialArgs extraConfig;
+          flakeAttribute = "nixosConfigurations";
+        };
 
-      darwin = {
-        mkSystem = nix-darwin.lib.darwinSystem;
-        flakeAttribute = "darwinConfigurations";
+        darwin = {
+          mkSystem = nix-darwin.lib.darwinSystem;
+          inherit specialArgs extraConfig;
+          flakeAttribute = "darwinConfigurations";
+        };
       };
-    };
 
     homeClasses = {
       home-manager = {
-        attrPath = [
-          "home-manager"
-          "users"
-        ];
+        system = {
+          usersAttrPath = [
+            "home-manager"
+            "users"
+          ];
 
-        systemClasses = {
-          nixos.module = home-manager.nixosModules.default;
-          darwin.module = home-manager.darwinModules.default;
+          extraConfig =
+            { inputs', self', ... }:
+            {
+              home-manager.extraSpecialArgs = {
+                inherit
+                  inputs
+                  inputs'
+                  self
+                  self'
+                  ;
+              };
+            };
+
+          classes = {
+            nixos.module = home-manager.nixosModules.default;
+            darwin.module = home-manager.darwinModules.default;
+          };
         };
       };
 
       hjem = {
-        attrPath = [
-          "hjem"
-          "users"
-        ];
+        system = {
+          usersAttrPath = [
+            "hjem"
+            "users"
+          ];
 
-        systemClasses = {
-          nixos.module = hjem.nixosModules.default;
-          darwin.module = hjem.darwinModules.default;
+          extraConfig =
+            { inputs', self', ... }:
+            {
+              hjem.specialArgs = {
+                inherit
+                  inputs
+                  inputs'
+                  self
+                  self'
+                  ;
+              };
+            };
+
+          classes = {
+            nixos.module = hjem.nixosModules.default;
+            darwin.module = hjem.darwinModules.default;
+          };
         };
       };
     };
