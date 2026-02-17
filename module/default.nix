@@ -1,13 +1,17 @@
 {
   lib,
   config,
-  withSystem,
+  getSystem,
   ...
 }:
 let
   inherit (lib) types;
 
   cfg = config.bundle;
+
+  withSystemWith =
+    system: args: f:
+    f ((getSystem system).allModuleArgs // args);
 
   deconstructedConfigData = lib.mapAttrsToList (
     hostAttr: host:
@@ -62,7 +66,10 @@ let
             lib.mapAttrsToList (
               userAttr: homeModules:
               let
-                extraHomeConfig = withSystem host.system homeClass.extraHomeConfig;
+                extraHomeConfig = withSystemWith host.system {
+                  host = hostAttr;
+                  user = userAttr;
+                } homeClass.extraHomeConfig;
               in
               map (homeModule: lib.setAttrByPath (usersAttrPath ++ [ userAttr ]) homeModule) (
                 homeModules ++ [ extraHomeConfig ]
@@ -70,7 +77,9 @@ let
             ) userConfigs
           );
 
-          extraConfig = withSystem host.system homeClass.system.extraConfig;
+          extraConfig = withSystemWith host.system {
+            host = hostAttr;
+          } homeClass.system.extraConfig;
         in
         [
           systemModule
@@ -86,8 +95,8 @@ let
         inherit (class) mkSystem;
 
         args = {
-          specialArgs = withSystem host.system class.specialArgs;
-          modules = [ (withSystem host.system class.extraConfig) ] ++ modules;
+          specialArgs = withSystemWith host.system { host = hostAttr; } class.specialArgs;
+          modules = [ (withSystemWith host.system { host = hostAttr; } class.extraConfig) ] ++ modules;
         };
       };
     }
