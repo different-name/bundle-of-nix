@@ -12,7 +12,8 @@ in
           shared = lib.mkOption {
             type = types.deferredModule;
             default = { };
-            # TODO documentation
+            description = "Bundle configuration for all hosts under this user";
+            example = lib.literalExpression "{ imports = [ (inputs.import-tree ./users/diffy/shared) ]; }";
           };
 
           # TODO assert that hosts here must be defined in cfg.hosts
@@ -24,7 +25,13 @@ in
                 _module.args.bundleInfo = { inherit (cfg.hosts.${hostAttr}) system; };
                 imports = [ value.${hostAttr} ];
               }) value;
-            # TODO documentation
+            description = "Bundle configuration for this host, under this user";
+            example = lib.literalExpression ''
+              {
+                sodium.imports = [ (inputs.import-tree ./users/diffy/hosts/sodium) ];
+                potassium.imports = [ (inputs.import-tree ./users/diffy/hosts/sodium) ];
+              }
+            '';
           };
         };
       }
@@ -39,6 +46,5 @@ in
 
       If you are the only one using your configuration, you would have only one real user
     '';
-    # TODO documentation
   };
 }

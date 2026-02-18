@@ -117,9 +117,9 @@ in
 
   options.bundle = {
     shared = lib.mkOption {
-      type = types.deferredModule; # would be nice if we could type this, but i'm not sure how to since bundleModule needs access to system
+      type = types.deferredModule;
       default = { };
-      # TODO documentation
+      description = "Bundle configuration for all users and their hosts";
     };
   };
 

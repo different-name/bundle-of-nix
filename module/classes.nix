@@ -32,101 +32,156 @@ in
               namespace = lib.mkOption {
                 type = types.str;
                 default = name;
-                # TODO documentation
+                description = "Attribute to namespace configuration for this class under";
+                example = "nixos";
               };
 
               flakeAttribute = lib.mkOption {
                 type = types.str;
-                # TODO documentation
+                description = "Attribute configurations for this class should be placed under";
+                example = "nixosConfigurations";
               };
 
               mkSystem = lib.mkOption {
                 type = types.raw;
-                # TODO documentation
+                description = "Function to use to create the system configuration";
+                example = lib.literalExpression "inputs.nixpkgs.lib.nixosSystem";
               };
 
               specialArgs = lib.mkOption {
                 type = types.raw;
                 default = _: { };
-                # TODO documentation
+                description = ''
+                  Function to generate specialArgs for this class
+
+                  Arguments passed are the same as flake-part's withSystem, with the addition of `host`
+                '';
+                example = lib.literalExpression ''
+                  { inputs, inputs', self, self', ... }:
+                  {
+                    inherit inputs inputs' self self';
+                  }
+                '';
               };
 
               extraConfig = lib.mkOption {
                 type = types.raw;
                 default = _: { };
-                # TODO documentation
+                description = ''
+                  Function to generate a system-level configuration module for this class
+
+                  Arguments passed are the same as flake-part's withSystem, with the addition of `host`
+                '';
+                example = lib.literalExpression ''
+                  { host, ... }:
+                  {
+                    networking.hostName = lib.mkDefault host;
+                  };
+                '';
               };
             };
           }
         )
       );
       default = { };
-      # TODO documentation
+      description = ''
+        Definition for system classes, a system class is a host level configuration
+
+        For example: nixos or darwin
+      '';
     };
 
-    homeClasses = lib.mkOption {
-      type = types.attrsOf (
-        types.submodule (
-          { name, config, ... }:
-          {
-            options = {
-              namespace = lib.mkOption {
-                type = types.str;
-                default = name;
-                # TODO documentation
-              };
+    homeClasses =
+      let
+        usersAttrPathOption = {
+          type = types.listOf types.str;
+          description = "The attribute path from system config to per-user config for this class";
+          example = lib.literalExpression ''
+            [ "home-manager" "users" ]
+          '';
+        };
 
-              system = {
-                usersAttrPath = lib.mkOption {
-                  type = types.listOf types.str;
-                  # TODO documentation
+        extraConfigOption = {
+          type = types.raw;
+          default = _: { };
+          description = ''
+            Function to generate a system-level configuration module for this class
+
+            Arguments passed are the same as flake-part's withSystem, with the addition of `host`
+          '';
+          example = lib.literalExpression ''
+            { inputs, inputs', self, self', ... }:
+            {
+              home-manager.extraSpecialArgs = { inherit inputs inputs' self self'; };
+            }
+          '';
+        };
+      in
+      lib.mkOption {
+        type = types.attrsOf (
+          types.submodule (
+            { name, config, ... }:
+            {
+              options = {
+                namespace = lib.mkOption {
+                  type = types.str;
+                  default = name;
+                  description = "Attribute to namespace configuration for this class under";
                 };
 
-                extraConfig = lib.mkOption {
+                system = {
+                  usersAttrPath = lib.mkOption usersAttrPathOption;
+                  extraConfig = lib.mkOption extraConfigOption;
+
+                  classes = lib.mkOption {
+                    type = types.attrsOf (
+                      types.submodule {
+                        options = {
+                          module = lib.mkOption {
+                            type = types.deferredModule;
+                            description = "The system module to import for this home class";
+                            example = lib.literalExpression "inputs.home-manager.nixosModules.default";
+                          };
+
+                          usersAttrPath = lib.mkOption (usersAttrPathOption // { default = config.system.usersAttrPath; });
+                          extraConfig = lib.mkOption (extraConfigOption // { default = config.system.extraConfig; });
+                        };
+                      }
+                    );
+                    default = { };
+                    description = "Required configuration for each system class";
+                  };
+                };
+
+                extraHomeConfig = lib.mkOption {
                   type = types.raw;
                   default = _: { };
-                  # TODO documentation
-                };
+                  description = ''
+                    Function to generate a home-level configuration module for this class
 
-                classes = lib.mkOption {
-                  type = types.attrsOf (
-                    types.submodule {
-                      options = {
-                        module = lib.mkOption {
-                          type = types.deferredModule;
-                          # TODO documentation
-                        };
-
-                        usersAttrPath = lib.mkOption {
-                          type = types.listOf types.str;
-                          default = config.system.usersAttrPath;
-                          # TODO documentation
-                        };
-
-                        extraConfig = lib.mkOption {
-                          type = types.raw;
-                          default = config.system.extraConfig;
-                          # TODO documentation
-                        };
+                    Arguments passed are the same as flake-part's withSystem, with the addition of `host` and `user`
+                  '';
+                  example = lib.literalExpression ''
+                    { user, ... }:
+                    {
+                      home = {
+                        username = lib.mkDefault user;
+                        homeDirectory = lib.mkDefault "/home/''${user}";
                       };
                     }
-                  );
-                  # TODO documentation
+                  '';
                 };
               };
+            }
+          )
+        );
+        default = { };
+        description = ''
+          Definition for home classes, a home class is a user level configuration
 
-              extraHomeConfig = lib.mkOption {
-                type = types.raw;
-                default = _: { };
-                # TODO documentation
-              };
-            };
-          }
-        )
-      );
-      default = { };
-      # TODO documentation
-    };
+          For example: home-manager or hjem
+        '';
+      };
   };
 
   config.bundle = {

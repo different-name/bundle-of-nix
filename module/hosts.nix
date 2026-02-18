@@ -79,7 +79,6 @@ in
       );
       default = { };
       description = "Host hardware information";
-      # TODO documentation
     };
 
     finalHostConfigs = lib.mkOption {
@@ -95,7 +94,7 @@ in
       internal = true;
       visible = false;
       readOnly = true;
-      # TODO documentation
+      description = "Host orientated final configuration, only system class configuration will be used from here";
     };
 
     finalUserConfigs = lib.mkOption {
@@ -113,7 +112,7 @@ in
       internal = true;
       visible = false;
       readOnly = true;
-      # TODO documentation
+      description = "User orientated final configuration, only home class configuration will be used from here";
     };
   };
 }
