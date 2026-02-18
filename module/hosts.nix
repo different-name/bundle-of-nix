@@ -1,3 +1,4 @@
+bundleLib:
 {
   lib,
   config,
@@ -7,7 +8,6 @@
 }:
 let
   inherit (lib) types;
-  bundleLib = import ../lib.nix lib;
 
   cfg = config.bundle;
 
@@ -53,7 +53,7 @@ let
     ];
   };
 
-  hostUsers = lib.mapAttrs (
+  usersByHost = lib.mapAttrs (
     hostAttr: _: lib.filterAttrs (_: user: lib.hasAttr hostAttr user.hosts) cfg.users
   ) cfg.hosts;
 in
@@ -81,23 +81,41 @@ in
       description = "Host hardware information";
     };
 
-    finalHostConfigs = lib.mkOption {
+    bundlesByHost = lib.mkOption {
       type = types.attrsOf bundleModule;
       default = lib.mapAttrs (hostAttr: _: {
         imports =
           lib.concatMap (user: [
             user.hosts.${hostAttr}
             user.shared
-          ]) (lib.attrValues hostUsers.${hostAttr})
+          ]) (lib.attrValues usersByHost.${hostAttr})
           ++ [ cfg.shared ];
       }) cfg.hosts;
       internal = true;
       visible = false;
       readOnly = true;
-      description = "Host orientated final configuration, only system class configuration will be used from here";
+      description = ''
+        Host orientated final configuration, only system class configuration will be used from here
+
+        This data is structured like so:
+
+        <host>.<class> = modules
+
+        ```nix
+        {
+          host-1 = {
+            nixos = [ ... ];
+            darwin = [ ... ];
+            home-manager = [ ... ]; # unused
+            hjem = [ ... ];         # unused
+          };
+          host-2 = { << repeated >> };
+        };
+        ```
+      '';
     };
 
-    finalUserConfigs = lib.mkOption {
+    bundlesByHostUser = lib.mkOption {
       type = types.attrsOf (types.attrsOf bundleModule);
       default = lib.mapAttrs (
         hostAttr: _:
@@ -107,12 +125,32 @@ in
             user.shared
             cfg.shared
           ];
-        }) hostUsers.${hostAttr}
+        }) usersByHost.${hostAttr}
       ) cfg.hosts;
       internal = true;
       visible = false;
       readOnly = true;
-      description = "User orientated final configuration, only home class configuration will be used from here";
+      description = ''
+        Home class orientated final configuration, only home class configuration will be used from here
+
+        This data is structured like so:
+
+        <host>.<user>.<class> = modules
+
+        ```nix
+        {
+          host-1 = {
+            user-1 = {
+              home-manager = [ ... ];
+              hjem = [ ... ];
+              nixos = [ ... ];  # unused
+              darwin = [ ... ]; # unused
+            };
+            user-1 = { << repeated >> };
+          };
+        };
+        ```
+      '';
     };
   };
 }

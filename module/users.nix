@@ -1,3 +1,4 @@
+{ ... }:
 { lib, config, ... }:
 let
   inherit (lib) types;
@@ -12,7 +13,7 @@ in
           shared = lib.mkOption {
             type = types.deferredModule;
             default = { };
-            description = "Bundle configuration for all hosts under this user";
+            description = "Bundle configuration shared between all hosts of this user";
             example = lib.literalExpression "{ imports = [ (inputs.import-tree ./users/diffy/shared) ]; }";
           };
 
@@ -25,7 +26,7 @@ in
                 _module.args.bundleInfo = { inherit (cfg.hosts.${hostAttr}) system; };
                 imports = [ value.${hostAttr} ];
               }) value;
-            description = "Bundle configuration for this host, under this user";
+            description = "Bundle configuration for this host, for this user";
             example = lib.literalExpression ''
               {
                 sodium.imports = [ (inputs.import-tree ./users/diffy/hosts/sodium) ];
