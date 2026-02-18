@@ -20,6 +20,13 @@ in
   ];
 
   options.bundle = {
+    specialArgs = lib.mkOption {
+      type = types.attrs;
+      default = { };
+      example = lib.literalExpression "{ inherit veryYippieLib; }";
+      description = "`specialArgs` passed to bundle. This option can be used to pass additional arguments to all bundle modules";
+    };
+
     shared = lib.mkOption {
       type = types.deferredModule;
       default = { };

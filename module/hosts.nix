@@ -19,7 +19,10 @@ let
   bundleModule = types.submoduleWith {
     description = "Nixxy module";
     class = "bundle";
-    specialArgs = { inherit inputs self bundleLib; };
+    specialArgs = {
+      inherit inputs self bundleLib;
+    }
+    // cfg.specialArgs;
 
     modules = [
       (
