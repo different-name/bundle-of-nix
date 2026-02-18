@@ -25,7 +25,7 @@ let
           }) children
         );
 
-        reconstruct = lib.zipAttrsWith (name: lib.mergeAttrsList);
+        reconstruct = builtins.zipAttrsWith (_: lib.mergeAttrsList);
       in
       attrs:
       lib.pipe attrs [
