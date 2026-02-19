@@ -1,9 +1,7 @@
 _:
-{ lib, config, ... }:
+{ lib, ... }:
 let
   inherit (lib) types;
-
-  cfg = config.bundle;
 in
 {
   options.bundle.users = lib.mkOption {
@@ -20,12 +18,6 @@ in
           # TODO assert that hosts here must be defined in cfg.hosts
           hosts = lib.mkOption {
             type = types.attrsOf types.deferredModule;
-            apply =
-              value:
-              lib.mapAttrs (hostAttr: _: {
-                _module.args.bundleInfo = { inherit (cfg.hosts.${hostAttr}) system; };
-                imports = [ value.${hostAttr} ];
-              }) value;
             description = "Bundle configuration for this host, for this user";
             example = lib.literalExpression ''
               {

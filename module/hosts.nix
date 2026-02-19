@@ -86,13 +86,17 @@ in
 
     bundlesByHost = lib.mkOption {
       type = types.attrsOf bundleModule;
-      default = lib.mapAttrs (hostAttr: _: {
+      default = lib.mapAttrs (hostAttr: host: {
+        _module.args.bundleInfo = { inherit (host) system; };
+
         imports =
-          lib.concatMap (user: [
-            user.hosts.${hostAttr}
-            user.shared
-          ]) (lib.attrValues usersByHost.${hostAttr})
-          ++ [ cfg.shared ];
+          let
+            userBundles = lib.concatMap (user: [
+              user.hosts.${hostAttr}
+              user.shared
+            ]) (lib.attrValues usersByHost.${hostAttr});
+          in
+          [ cfg.shared ] ++ userBundles;
       }) cfg.hosts;
       internal = true;
       visible = false;
@@ -121,8 +125,10 @@ in
     bundlesByHostUser = lib.mkOption {
       type = types.attrsOf (types.attrsOf bundleModule);
       default = lib.mapAttrs (
-        hostAttr: _:
+        hostAttr: host:
         lib.mapAttrs (_: user: {
+          _module.args.bundleInfo = { inherit (host) system; };
+
           imports = [
             user.hosts.${hostAttr}
             user.shared
