@@ -91,7 +91,7 @@ You could even wrap it with an enable option if you'd like to
 
 But if you don't like grouping up configuration from different platforms, **bundle** is not for you
 
-Bundle also does not currently support seperate home platform builds, this means no `homeConfigurations`. Though this may be added soon
+Bundle also does not currently support separate home platform builds, this means no `homeConfigurations`. Though this may be added soon
 
 ## User-centric configuration
 
