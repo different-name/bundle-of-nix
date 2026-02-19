@@ -14,7 +14,7 @@ let
 in
 {
   imports = map (module: import module bundleLib) [
-    ./classes.nix
+    ./platforms.nix
     ./hosts.nix
     ./users.nix
   ];
@@ -44,48 +44,49 @@ in
           # complete bundled configurations for each user of this host
           homeBundles = cfg.bundlesByHostUser.${hostAttr};
 
-          sysClassAttr = host.class;
-          sysClass = cfg.systemClasses.${sysClassAttr} or (throw "No '${sysClassAttr}' system class found");
+          sysPlatformAttr = host.systemPlatform;
+          sysPlatform =
+            cfg.systemPlatforms.${sysPlatformAttr} or (throw "No '${sysPlatformAttr}' system-platform found");
 
-          specialArgs = withSystemExtraArgs host.system { host = hostAttr; } sysClass.specialArgs;
+          specialArgs = withSystemExtraArgs host.system { host = hostAttr; } sysPlatform.specialArgs;
           sysModules =
             let
-              extraConfig = withSystemExtraArgs host.system { host = hostAttr; } sysClass.extraConfig;
+              extraConfig = withSystemExtraArgs host.system { host = hostAttr; } sysPlatform.extraConfig;
             in
-            [ extraConfig ] ++ sysBundle.${sysClass.namespace};
+            [ extraConfig ] ++ sysBundle.${sysPlatform.namespace};
 
-          # home classes that are in use, and have a usable module
-          usedHomeClasses = lib.filter (
-            homeClass:
+          # home-platforms that are in use, and have a usable module
+          usedHomePlatforms = lib.filter (
+            homePlatform:
             let
-              # does the home class have any configuration for this host?
-              isUsed = sysBundle.${homeClass.namespace} != [ ];
-              # does the home class provide a module for this system class?
-              hasSystemModule = lib.hasAttr sysClassAttr homeClass.system.classes;
+              # does the home-platform have any configuration for this host?
+              isUsed = sysBundle.${homePlatform.namespace} != [ ];
+              # does the home-platform provide a module for this system-platform?
+              hasSystemModule = lib.hasAttr sysPlatformAttr homePlatform.system.platforms;
             in
             isUsed && hasSystemModule
-          ) (lib.attrValues cfg.homeClasses);
+          ) (lib.attrValues cfg.homePlatforms);
 
-          # configuration modules to import for home class -> user
+          # configuration modules to import for home-platform -> user
           # transposed from cfg.bundlesByHostUser.<host>
-          modulesByHomeClassUser = transpose homeBundles;
+          modulesByHomePlatformUser = transpose homeBundles;
 
-          # system modules from each home class that is in use
-          # this includes the system module & extraConfig for the home class itself e.g.
+          # system modules from each home-platform that is in use
+          # this includes the system module & extraConfig for the home-platform itself e.g.
           #   inputs.home-manager.nixosModules.default
           # as well as home level imports & extraHomeConfig mapped to system config e.g.
           #   { home-manager.users.diffy.imports = [ { home.username = "diffy"; } ]; }
-          sysModulesFromHomeClasses = lib.concatMap (
-            homeClass:
+          sysModulesFromHomePlatforms = lib.concatMap (
+            homePlatform:
             let
-              sysModule = homeClass.system.classes.${sysClassAttr}.module;
+              sysModule = homePlatform.system.platforms.${sysPlatformAttr}.module;
 
               extraConfig = withSystemExtraArgs host.system {
                 host = hostAttr;
-              } homeClass.system.extraConfig;
+              } homePlatform.system.extraConfig;
 
-              inherit (homeClass.system.classes.${sysClassAttr}) usersAttrPath;
-              homeModulesByUser = modulesByHomeClassUser.${homeClass.namespace};
+              inherit (homePlatform.system.platforms.${sysPlatformAttr}) usersAttrPath;
+              homeModulesByUser = modulesByHomePlatformUser.${homePlatform.namespace};
 
               mappedHomeModules = lib.mapAttrsToList (
                 userAttr: homeModules:
@@ -93,7 +94,7 @@ in
                   extraHomeConfig = withSystemExtraArgs host.system {
                     host = hostAttr;
                     user = userAttr;
-                  } homeClass.extraHomeConfig;
+                  } homePlatform.extraHomeConfig;
                 in
                 lib.setAttrByPath usersAttrPath {
                   ${userAttr}.imports = [ extraHomeConfig ] ++ homeModules;
@@ -105,27 +106,27 @@ in
               extraConfig
             ]
             ++ mappedHomeModules
-          ) usedHomeClasses;
+          ) usedHomePlatforms;
         in
         {
-          inherit sysClass;
+          inherit sysPlatform;
 
           args = {
             inherit specialArgs;
-            modules = sysModules ++ sysModulesFromHomeClasses;
+            modules = sysModules ++ sysModulesFromHomePlatforms;
           };
         }
       ) cfg.hosts;
 
-      # final generated configurations, each placed under <sysClass.flakeAttribute>.<host>
+      # final generated configurations, each placed under <sysPlatform.flakeAttribute>.<host>
       configurations = transpose (
         lib.mapAttrs (
           _: hostConfiguration:
           let
-            inherit (hostConfiguration) sysClass args;
+            inherit (hostConfiguration) sysPlatform args;
           in
           {
-            ${sysClass.flakeAttribute} = sysClass.mkSystem args;
+            ${sysPlatform.flakeAttribute} = sysPlatform.mkSystem args;
           }
         ) hostConfigurations
       );

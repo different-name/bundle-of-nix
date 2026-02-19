@@ -24,7 +24,7 @@ let
 in
 {
   options.bundle = {
-    systemClasses = lib.mkOption {
+    systemPlatforms = lib.mkOption {
       type = types.attrsOf (
         types.submodule (
           { name, ... }:
@@ -33,13 +33,13 @@ in
               namespace = lib.mkOption {
                 type = types.str;
                 default = name;
-                description = "Attribute to namespace configuration for this class under";
+                description = "Attribute to namespace configuration for this platform under";
                 example = "nixos";
               };
 
               flakeAttribute = lib.mkOption {
                 type = types.str;
-                description = "Attribute configurations for this class should be placed under";
+                description = "Attribute configurations for this platform should be placed under";
                 example = "nixosConfigurations";
               };
 
@@ -53,7 +53,7 @@ in
                 type = types.raw;
                 default = _: { };
                 description = ''
-                  Function to generate specialArgs for this class
+                  Function to generate specialArgs for this platform
 
                   Arguments passed are the same as flake-part's withSystem, with the addition of `host`
                 '';
@@ -69,7 +69,7 @@ in
                 type = types.raw;
                 default = _: { };
                 description = ''
-                  Function to generate a system-level configuration module for this class
+                  Function to generate a system-level configuration module for this platform
 
                   Arguments passed are the same as flake-part's withSystem, with the addition of `host`
                 '';
@@ -85,18 +85,14 @@ in
         )
       );
       default = { };
-      description = ''
-        Definition for system classes, a system class is a host level configuration
-
-        For example: nixos or darwin
-      '';
+      description = "Definition for system platforms, for example: nixos or darwin";
     };
 
-    homeClasses =
+    homePlatforms =
       let
         usersAttrPathOption = {
           type = types.listOf types.str;
-          description = "The attribute path from system config to per-user config for this class";
+          description = "The attribute path from system config to per-user config for this platform";
           example = lib.literalExpression ''
             [ "home-manager" "users" ]
           '';
@@ -106,7 +102,7 @@ in
           type = types.raw;
           default = _: { };
           description = ''
-            Function to generate a system-level configuration module for this class
+            Function to generate a system-level configuration module for this platform
 
             Arguments passed are the same as flake-part's withSystem, with the addition of `host`
           '';
@@ -127,20 +123,20 @@ in
                 namespace = lib.mkOption {
                   type = types.str;
                   default = name;
-                  description = "Attribute to namespace configuration for this class under";
+                  description = "Attribute to namespace configuration for this platform under";
                 };
 
                 system = {
                   usersAttrPath = lib.mkOption usersAttrPathOption;
                   extraConfig = lib.mkOption extraConfigOption;
 
-                  classes = lib.mkOption {
+                  platforms = lib.mkOption {
                     type = types.attrsOf (
                       types.submodule {
                         options = {
                           module = lib.mkOption {
                             type = types.deferredModule;
-                            description = "The system module to import for this home class";
+                            description = "The system module to import for this home-platform";
                             example = lib.literalExpression "inputs.home-manager.nixosModules.default";
                           };
 
@@ -150,7 +146,7 @@ in
                       }
                     );
                     default = { };
-                    description = "Required configuration for each system class";
+                    description = "Required configuration for each system-platform";
                   };
                 };
 
@@ -158,7 +154,7 @@ in
                   type = types.raw;
                   default = _: { };
                   description = ''
-                    Function to generate a home-level configuration module for this class
+                    Function to generate a home-level configuration module for this platform
 
                     Arguments passed are the same as flake-part's withSystem, with the addition of `host` and `user`
                   '';
@@ -177,16 +173,12 @@ in
           )
         );
         default = { };
-        description = ''
-          Definition for home classes, a home class is a user level configuration
-
-          For example: home-manager or hjem
-        '';
+        description = "Definition for home platforms, for example: home-manager or hjem";
       };
   };
 
   config.bundle = {
-    systemClasses = {
+    systemPlatforms = {
       nixos = {
         mkSystem = nixpkgs.lib.nixosSystem;
         inherit specialArgs;
@@ -202,7 +194,7 @@ in
       };
     };
 
-    homeClasses = {
+    homePlatforms = {
       home-manager = {
         system = {
           usersAttrPath = [
@@ -214,7 +206,7 @@ in
             home-manager.extraSpecialArgs = { inherit inputs self; };
           };
 
-          classes = {
+          platforms = {
             nixos.module = home-manager.nixosModules.default;
             darwin.module = home-manager.darwinModules.default;
           };
@@ -232,7 +224,7 @@ in
 
           extraConfig = _: { hjem = { inherit specialArgs; }; };
 
-          classes = {
+          platforms = {
             nixos.module = hjem.nixosModules.default;
             darwin.module = hjem.darwinModules.default;
           };

@@ -11,9 +11,9 @@ let
 
   cfg = config.bundle;
 
-  allClasses = lib.concatMap lib.attrsToList [
-    cfg.systemClasses
-    cfg.homeClasses
+  allPlatforms = lib.concatMap lib.attrsToList [
+    cfg.systemPlatforms
+    cfg.homePlatforms
   ];
 
   bundleModule = types.submoduleWith {
@@ -50,7 +50,7 @@ let
                 example = lib.literalExpression "{ programs.example.enable = true; }";
               }
             )
-          ) allClasses
+          ) allPlatforms
         );
       }
     ];
@@ -72,9 +72,9 @@ in
               example = "x86_64-linux";
             };
 
-            class = lib.mkOption {
+            systemPlatform = lib.mkOption {
               type = types.str;
-              description = "The class of this host";
+              description = "The system platform of this host";
               example = "nixos";
             };
           };
@@ -98,11 +98,11 @@ in
       visible = false;
       readOnly = true;
       description = ''
-        Host orientated final configuration, only system class configuration will be used from here
+        Host orientated final configuration, only system-platform configuration will be used from here
 
         This data is structured like so:
 
-        <host>.<class> = modules
+        <host>.<platform> = modules
 
         ```nix
         {
@@ -134,11 +134,11 @@ in
       visible = false;
       readOnly = true;
       description = ''
-        Home class orientated final configuration, only home class configuration will be used from here
+        Home-platform orientated final configuration, only home-platform configuration will be used from here
 
         This data is structured like so:
 
-        <host>.<user>.<class> = modules
+        <host>.<user>.<platform> = modules
 
         ```nix
         {
