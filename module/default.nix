@@ -47,6 +47,9 @@ in
         ) cfg.users
       );
 
+      systemHosts = lib.filterAttrs (_: host: host.systemPlatform != null) cfg.hosts;
+      systemlessHosts = lib.filterAttrs (_: host: host.systemPlatform == null) cfg.hosts;
+
       hostConfigurations = lib.mapAttrs (
         hostAttr: host:
         let
@@ -127,10 +130,9 @@ in
             modules = sysModules ++ sysModulesFromHomePlatforms;
           };
         }
-      ) cfg.hosts;
+      ) systemHosts;
 
-      # final generated configurations, each placed under <sysPlatform.flakeAttribute>.<host>
-      configurations = transpose (
+      systemConfigurations = transpose (
         lib.mapAttrs (
           _: hostConfiguration:
           let
@@ -141,9 +143,73 @@ in
           }
         ) hostConfigurations
       );
+
+      standaloneErrors = lib.concatLists (
+        lib.mapAttrsToList (
+          hostAttr: _:
+          let
+            modulesByHomePlatformUser = transpose cfg.bundlesByHostUser.${hostAttr};
+          in
+          lib.concatMap (
+            homePlatform:
+            let
+              usedUsers = lib.filterAttrs (_: mods: mods != [ ]) (
+                modulesByHomePlatformUser.${homePlatform.namespace} or { }
+              );
+            in
+            lib.optional (homePlatform.standalone == null && usedUsers != { })
+              "bundle host \"${hostAttr}\": home-platform \"${homePlatform.namespace}\" has configuration but no standalone builder"
+          ) (lib.attrValues cfg.homePlatforms)
+        ) systemlessHosts
+      );
+
+      standaloneHomeConfigurations = lib.foldl' lib.recursiveUpdate { } (
+        lib.mapAttrsToList (
+          hostAttr: host:
+          let
+            modulesByHomePlatformUser = transpose cfg.bundlesByHostUser.${hostAttr};
+            pkgs = (getSystem host.system).allModuleArgs.pkgs;
+
+            standaloneHomePlatforms = lib.filter (homePlatform: homePlatform.standalone != null) (
+              lib.attrValues cfg.homePlatforms
+            );
+          in
+          lib.foldl' lib.recursiveUpdate { } (
+            lib.concatMap (
+              homePlatform:
+              let
+                inherit (homePlatform) standalone;
+                usedUsers = lib.filterAttrs (_: mods: mods != [ ]) (
+                  modulesByHomePlatformUser.${homePlatform.namespace} or { }
+                );
+              in
+              lib.mapAttrsToList (
+                userAttr: homeModules:
+                let
+                  extraArgs = {
+                    host = hostAttr;
+                    user = userAttr;
+                  };
+
+                  specialArgs = withSystemExtraArgs host.system extraArgs standalone.specialArgs;
+                  extraHomeConfig = withSystemExtraArgs host.system extraArgs homePlatform.extraHomeConfig;
+                in
+                {
+                  ${standalone.flakeAttribute}."${userAttr}@${hostAttr}" = standalone.mkSystem {
+                    inherit pkgs specialArgs;
+                    modules = [ extraHomeConfig ] ++ homeModules;
+                  };
+                }
+              ) usedUsers
+            ) standaloneHomePlatforms
+          )
+        ) systemlessHosts
+      );
+
+      errors = unknownHostErrors ++ standaloneErrors;
     in
-    if unknownHostErrors != [ ] then
-      throw "bundle: undeclared hosts referenced:\n  ${lib.concatStringsSep "\n  " unknownHostErrors}"
+    if errors != [ ] then
+      throw "bundle:\n  ${lib.concatStringsSep "\n  " errors}"
     else
-      configurations;
+      lib.recursiveUpdate systemConfigurations standaloneHomeConfigurations;
 }

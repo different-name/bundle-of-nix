@@ -101,7 +101,7 @@ bundleLib.mkEnableModule [ "myConfig" "applications" "obs-studio" ] {
 
 But if you don't like grouping up configuration from different platforms, **bundle** is not for you
 
-Bundle also does not currently support separate home platform builds, this means no `homeConfigurations`. Though this may be added soon
+Standalone home builds (like `homeConfigurations` for a non-NixOS machine) are supported through system-less hosts, see [Standalone home configurations](#standalone-home-configurations)
 
 ## User-centric configuration
 
@@ -218,3 +218,27 @@ Then add your configuration for each user, here's an example configuration:
 
 Based on your configuration, **bundle** will generate your hosts' configurations for you
 
+## Standalone home configurations
+
+To manage home config on a machine that isn't NixOS or Darwin (a foreign distro, WSL, a server), declare a host with no `systemPlatform`:
+
+```nix
+{
+  bundle = {
+    hosts.workbox.system = "x86_64-linux";
+
+    users.diffy = {
+      shared.imports = [ ./users/diffy/shared ];
+      hosts.workbox.imports = [ ./users/diffy/hosts/workbox ];
+    };
+  };
+}
+```
+
+The host builds no system. Each of its users with config for a home-platform that has a standalone builder (`home-manager` by default) gets a build under that platform's `flakeAttribute`, named `<user>@<host>`:
+
+```sh
+home-manager switch --flake .#"diffy@workbox"
+```
+
+A host builds either a system or standalone home configurations. Home config for a home-platform without a standalone builder, such as `hjem`, is an error on a system-less host.

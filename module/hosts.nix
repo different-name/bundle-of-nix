@@ -73,8 +73,9 @@ in
             };
 
             systemPlatform = lib.mkOption {
-              type = types.str;
-              description = "The system platform of this host";
+              type = types.nullOr types.str;
+              default = null;
+              description = "The system platform of this host, or null for a system-less host that only builds standalone home configurations";
               example = "nixos";
             };
           };

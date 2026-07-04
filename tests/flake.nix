@@ -45,6 +45,8 @@
                   systemPlatform = "nixos";
                 };
 
+                hosts.foreignbox.system = "x86_64-linux";
+
                 users.alice = {
                   shared = {
                     nixos.system.stateVersion = "24.11";
@@ -64,20 +66,31 @@
                       homeDirectory = "/home/alice";
                     };
                   };
+
+                  hosts.foreignbox.home-manager.home = {
+                    username = "alice";
+                    homeDirectory = "/home/alice";
+                  };
                 };
               };
             };
 
             sys = example.nixosConfigurations.testhost.config;
+            home = example.homeConfigurations."alice@foreignbox".config;
 
             cases = {
               "home-manager is wired under the user" = sys.home-manager.users ? alice;
               "home config is routed to the user" = sys.home-manager.users.alice.home.username == "alice";
               "host-specific nixos config is applied" = sys.networking.hostName == "testhost";
               "shared nixos config is merged in" = sys.system.stateVersion == "24.11";
-              "host platform is set from the host's system" =
-                sys.nixpkgs.hostPlatform.system == "x86_64-linux";
+              "host platform is set from the host's system" = sys.nixpkgs.hostPlatform.system == "x86_64-linux";
               "the system user account is present" = sys.users.users ? alice;
+              "system-less host builds a standalone home configuration" =
+                example.homeConfigurations ? "alice@foreignbox";
+              "standalone home config is routed to the user" = home.home.username == "alice";
+              "shared home config is merged into the standalone build" = home.home.stateVersion == "24.11";
+              "system-ful host does not emit a standalone home configuration" =
+                !(example.homeConfigurations ? "alice@testhost");
             };
 
             failures = lib.filter (name: !cases.${name}) (lib.attrNames cases);

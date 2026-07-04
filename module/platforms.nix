@@ -176,6 +176,38 @@ in
                     }
                   '';
                 };
+
+                standalone = lib.mkOption {
+                  type = types.nullOr (
+                    types.submodule {
+                      options = {
+                        flakeAttribute = lib.mkOption {
+                          type = types.str;
+                          description = "Attribute standalone home configurations for this platform should be placed under";
+                          example = "homeConfigurations";
+                        };
+
+                        mkSystem = lib.mkOption {
+                          type = types.raw;
+                          description = "Function to create a standalone home configuration, called with `{ pkgs, specialArgs, modules }`";
+                          example = lib.literalExpression "inputs.home-manager.lib.homeManagerConfiguration";
+                        };
+
+                        specialArgs = lib.mkOption {
+                          type = types.raw;
+                          default = _: { };
+                          description = ''
+                            Function to generate specialArgs for a standalone home configuration
+
+                            Arguments passed are the same as flake-part's withSystem, with the addition of `host` and `user`
+                          '';
+                        };
+                      };
+                    }
+                  );
+                  default = null;
+                  description = "How to build this home-platform standalone, for system-less hosts. When null, this home-platform can only be used embedded in a system";
+                };
               };
             }
           )
@@ -219,6 +251,21 @@ in
         };
 
         extraHomeConfig = homeExtraConfig;
+
+        standalone = {
+          flakeAttribute = "homeConfigurations";
+          specialArgs = _: { inherit inputs self; };
+          mkSystem =
+            {
+              pkgs,
+              specialArgs,
+              modules,
+            }:
+            home-manager.lib.homeManagerConfiguration {
+              inherit pkgs modules;
+              extraSpecialArgs = specialArgs;
+            };
+        };
       };
 
       hjem = {
