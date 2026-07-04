@@ -67,10 +67,7 @@
                     };
                   };
 
-                  hosts.foreignbox.home-manager.home = {
-                    username = "alice";
-                    homeDirectory = "/home/alice";
-                  };
+                  hosts.foreignbox.home-manager.home.homeDirectory = "/home/alice";
                 };
               };
             };
@@ -87,7 +84,7 @@
               "the system user account is present" = sys.users.users ? alice;
               "system-less host builds a standalone home configuration" =
                 example.homeConfigurations ? "alice@foreignbox";
-              "standalone home config is routed to the user" = home.home.username == "alice";
+              "standalone home username defaults to the user" = home.home.username == "alice";
               "shared home config is merged into the standalone build" = home.home.stateVersion == "24.11";
               "system-ful host does not emit a standalone home configuration" =
                 !(example.homeConfigurations ? "alice@testhost");

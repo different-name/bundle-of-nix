@@ -196,7 +196,6 @@ Then add your configuration for each user, here's an example configuration:
       diffy = {
         shared = {
           imports = [ ./users/diffy/shared ];
-          home-manager.home.username = "diffy";
         };
         hosts = {
           sodium = {
@@ -240,5 +239,7 @@ The host builds no system. Each of its users with config for a home-platform tha
 ```sh
 home-manager switch --flake .#"diffy@workbox"
 ```
+
+`home.username` defaults to the user's name. `home.homeDirectory` still has to be set.
 
 A host builds either a system or standalone home configurations. Home config for a home-platform without a standalone builder, such as `hjem`, is an error on a system-less host.

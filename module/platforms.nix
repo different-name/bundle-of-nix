@@ -250,7 +250,12 @@ in
           darwin.module = home-manager.darwinModules.default;
         };
 
-        extraHomeConfig = homeExtraConfig;
+        extraHomeConfig =
+          args@{ user, ... }:
+          (homeExtraConfig args)
+          // {
+            home.username = lib.mkOptionDefault user;
+          };
 
         standalone = {
           flakeAttribute = "homeConfigurations";
