@@ -12,8 +12,8 @@ let
 
   nixpkgs = getInput "nixpkgs";
   nix-darwin = getInput "nix-darwin";
-  home-manager = inputs.home-manager or (throw "No home-manager input found");
-  hjem = inputs.hjem or (throw "No hjem input found");
+  home-manager = getInput "home-manager";
+  hjem = getInput "hjem";
 
   specialArgs = _: { inherit inputs self; };
   primeArgsConfig =
