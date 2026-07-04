@@ -15,7 +15,6 @@ in
             example = lib.literalExpression "{ imports = [ (inputs.import-tree ./users/diffy/shared) ]; }";
           };
 
-          # TODO assert that hosts here must be defined in cfg.hosts
           hosts = lib.mkOption {
             type = types.attrsOf types.deferredModule;
             description = "Bundle configuration for this host, for this user";
