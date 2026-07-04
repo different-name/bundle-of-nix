@@ -36,6 +36,17 @@ in
 
   config.flake =
     let
+      # a host missing from bundle.hosts would silently drop the user's config for it
+      unknownHostErrors = lib.concatLists (
+        lib.mapAttrsToList (
+          userAttr: user:
+          map (
+            hostAttr:
+            "bundle.users.${userAttr}.hosts.${hostAttr}: host \"${hostAttr}\" is not declared in bundle.hosts"
+          ) (lib.filter (hostAttr: !(cfg.hosts ? ${hostAttr})) (lib.attrNames user.hosts))
+        ) cfg.users
+      );
+
       hostConfigurations = lib.mapAttrs (
         hostAttr: host:
         let
@@ -131,5 +142,8 @@ in
         ) hostConfigurations
       );
     in
-    configurations;
+    if unknownHostErrors != [ ] then
+      throw "bundle: undeclared hosts referenced:\n  ${lib.concatStringsSep "\n  " unknownHostErrors}"
+    else
+      configurations;
 }
