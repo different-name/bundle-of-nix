@@ -16,11 +16,21 @@ let
   hjem = getInput "hjem";
 
   specialArgs = _: { inherit inputs self; };
-  primeArgsConfig =
-    { inputs', self', ... }:
+
+  sysExtraConfig =
+    {
+      inputs',
+      self',
+      system,
+      ...
+    }:
     {
       _module.args = { inherit inputs' self'; };
+      nixpkgs.hostPlatform = lib.mkDefault system;
     };
+  homeExtraConfig = { inputs', self', ... }: {
+    _module.args = { inherit inputs' self'; };
+  };
 in
 {
   options.bundle = {
@@ -182,14 +192,14 @@ in
       nixos = {
         mkSystem = nixpkgs.lib.nixosSystem;
         inherit specialArgs;
-        extraConfig = primeArgsConfig;
+        extraConfig = sysExtraConfig;
         flakeAttribute = "nixosConfigurations";
       };
 
       darwin = {
         mkSystem = nix-darwin.lib.darwinSystem;
         inherit specialArgs;
-        extraConfig = primeArgsConfig;
+        extraConfig = sysExtraConfig;
         flakeAttribute = "darwinConfigurations";
       };
     };
@@ -212,7 +222,7 @@ in
           };
         };
 
-        extraHomeConfig = primeArgsConfig;
+        extraHomeConfig = homeExtraConfig;
       };
 
       hjem = {
@@ -230,7 +240,7 @@ in
           };
         };
 
-        extraHomeConfig = primeArgsConfig;
+        extraHomeConfig = homeExtraConfig;
       };
     };
   };

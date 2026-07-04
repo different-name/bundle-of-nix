@@ -183,6 +183,8 @@ Firstly, configure the `system` & `systemPlatform` for each of your hosts:
 }
 ```
 
+The `nixos` and `darwin` platforms set `nixpkgs.hostPlatform` from the host's `system` with `mkDefault`.
+
 Then add your configuration for each user, here's an example configuration:
 
 ```nix

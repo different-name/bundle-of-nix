@@ -47,10 +47,7 @@
 
                 users.alice = {
                   shared = {
-                    nixos = {
-                      nixpkgs.hostPlatform = "x86_64-linux";
-                      system.stateVersion = "24.11";
-                    };
+                    nixos.system.stateVersion = "24.11";
                     home-manager.home.stateVersion = "24.11";
                   };
 
@@ -78,6 +75,8 @@
               "home config is routed to the user" = sys.home-manager.users.alice.home.username == "alice";
               "host-specific nixos config is applied" = sys.networking.hostName == "testhost";
               "shared nixos config is merged in" = sys.system.stateVersion == "24.11";
+              "host platform is set from the host's system" =
+                sys.nixpkgs.hostPlatform.system == "x86_64-linux";
               "the system user account is present" = sys.users.users ? alice;
             };
 
