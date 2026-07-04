@@ -136,28 +136,26 @@ in
                   description = "Attribute to namespace configuration for this platform under";
                 };
 
-                system = {
-                  usersAttrPath = lib.mkOption usersAttrPathOption;
-                  extraConfig = lib.mkOption extraConfigOption;
+                usersAttrPath = lib.mkOption usersAttrPathOption;
+                extraConfig = lib.mkOption extraConfigOption;
 
-                  platforms = lib.mkOption {
-                    type = types.attrsOf (
-                      types.submodule {
-                        options = {
-                          module = lib.mkOption {
-                            type = types.deferredModule;
-                            description = "The system module to import for this home-platform";
-                            example = lib.literalExpression "inputs.home-manager.nixosModules.default";
-                          };
-
-                          usersAttrPath = lib.mkOption (usersAttrPathOption // { default = config.system.usersAttrPath; });
-                          extraConfig = lib.mkOption (extraConfigOption // { default = config.system.extraConfig; });
+                attachTo = lib.mkOption {
+                  type = types.attrsOf (
+                    types.submodule {
+                      options = {
+                        module = lib.mkOption {
+                          type = types.deferredModule;
+                          description = "The system module to import for this home-platform";
+                          example = lib.literalExpression "inputs.home-manager.nixosModules.default";
                         };
-                      }
-                    );
-                    default = { };
-                    description = "Required configuration for each system-platform";
-                  };
+
+                        usersAttrPath = lib.mkOption (usersAttrPathOption // { default = config.usersAttrPath; });
+                        extraConfig = lib.mkOption (extraConfigOption // { default = config.extraConfig; });
+                      };
+                    }
+                  );
+                  default = { };
+                  description = "The system-platforms this home-platform can attach to";
                 };
 
                 extraHomeConfig = lib.mkOption {
@@ -206,38 +204,34 @@ in
 
     homePlatforms = {
       home-manager = {
-        system = {
-          usersAttrPath = [
-            "home-manager"
-            "users"
-          ];
+        usersAttrPath = [
+          "home-manager"
+          "users"
+        ];
 
-          extraConfig = _: {
-            home-manager.extraSpecialArgs = { inherit inputs self; };
-          };
+        extraConfig = _: {
+          home-manager.extraSpecialArgs = { inherit inputs self; };
+        };
 
-          platforms = {
-            nixos.module = home-manager.nixosModules.default;
-            darwin.module = home-manager.darwinModules.default;
-          };
+        attachTo = {
+          nixos.module = home-manager.nixosModules.default;
+          darwin.module = home-manager.darwinModules.default;
         };
 
         extraHomeConfig = homeExtraConfig;
       };
 
       hjem = {
-        system = {
-          usersAttrPath = [
-            "hjem"
-            "users"
-          ];
+        usersAttrPath = [
+          "hjem"
+          "users"
+        ];
 
-          extraConfig = _: { hjem = { inherit specialArgs; }; };
+        extraConfig = _: { hjem = { inherit specialArgs; }; };
 
-          platforms = {
-            nixos.module = hjem.nixosModules.default;
-            darwin.module = hjem.darwinModules.default;
-          };
+        attachTo = {
+          nixos.module = hjem.nixosModules.default;
+          darwin.module = hjem.darwinModules.default;
         };
 
         extraHomeConfig = homeExtraConfig;

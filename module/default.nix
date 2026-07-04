@@ -73,7 +73,7 @@ in
               # does the home-platform have any configuration for this host?
               isUsed = sysBundle.${homePlatform.namespace} != [ ];
               # does the home-platform provide a module for this system-platform?
-              hasSystemModule = lib.hasAttr sysPlatformAttr homePlatform.system.platforms;
+              hasSystemModule = lib.hasAttr sysPlatformAttr homePlatform.attachTo;
             in
             isUsed && hasSystemModule
           ) (lib.attrValues cfg.homePlatforms);
@@ -90,13 +90,13 @@ in
           sysModulesFromHomePlatforms = lib.concatMap (
             homePlatform:
             let
-              sysModule = homePlatform.system.platforms.${sysPlatformAttr}.module;
+              attachment = homePlatform.attachTo.${sysPlatformAttr};
 
               extraConfig = withSystemExtraArgs host.system {
                 host = hostAttr;
-              } homePlatform.system.extraConfig;
+              } homePlatform.extraConfig;
 
-              inherit (homePlatform.system.platforms.${sysPlatformAttr}) usersAttrPath;
+              inherit (attachment) module usersAttrPath;
               homeModulesByUser = modulesByHomePlatformUser.${homePlatform.namespace};
 
               mappedHomeModules = lib.mapAttrsToList (
@@ -113,7 +113,7 @@ in
               ) homeModulesByUser;
             in
             [
-              sysModule
+              module
               extraConfig
             ]
             ++ mappedHomeModules
