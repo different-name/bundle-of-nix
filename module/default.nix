@@ -94,7 +94,7 @@ in
 
               extraConfig = withSystemExtraArgs host.system {
                 host = hostAttr;
-              } homePlatform.extraConfig;
+              } attachment.extraConfig;
 
               inherit (attachment) module usersAttrPath;
               homeModulesByUser = modulesByHomePlatformUser.${homePlatform.namespace};
