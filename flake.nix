@@ -1,5 +1,5 @@
 {
-  description = "bundle-of-nix";
+  description = "flake-parts module for grouping nix config into feature-focused, cross-platform bundles";
 
   outputs =
     _:

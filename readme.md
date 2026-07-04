@@ -78,6 +78,16 @@ You could even wrap it with an enable option if you'd like to
 }
 ```
 
+Bundle modules receive `bundleLib`, whose `mkEnableModule` is a shorthand for this pattern:
+
+```nix
+{ bundleLib, ... }:
+bundleLib.mkEnableModule [ "myConfig" "applications" "obs-studio" ] {
+  nixos = { ... };
+  home-manager = { ... };
+}
+```
+
 ## When to use bundle
 
 **bundle** is extensible and makes as little assumptions about how you like to do things as possible. This allows **bundle** to work well with:
@@ -139,6 +149,15 @@ Some platforms are configured by default, if a platform you want to use isn't in
 - [Home Manager](https://github.com/nix-community/home-manager)
 - [hjem](https://github.com/feel-co/hjem)
 
+**bundle** has no flake inputs of its own and reads them from your flake. Each default platform needs the input of the same name, only when that platform is used:
+
+| Input | Required when |
+| --- | --- |
+| `nixpkgs` | using the `nixos` system platform, or any system-less host |
+| `nix-darwin` | using the `darwin` system platform |
+| `home-manager` | using the `home-manager` home platform |
+| `hjem` | using the `hjem` home platform |
+
 ## Getting started
 
 Firstly, configure the `system` & `systemPlatform` for each of your hosts:
@@ -196,3 +215,4 @@ Then add your configuration for each user, here's an example configuration:
 ```
 
 Based on your configuration, **bundle** will generate your hosts' configurations for you
+
