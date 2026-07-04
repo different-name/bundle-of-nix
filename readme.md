@@ -12,6 +12,7 @@ The coziest way to manage your nix config!
 - [User-centric configuration](#user-centric-configuration)
 - [Supported platforms](#supported-platforms)
 - [Getting started](#getting-started)
+- [Standalone home configurations](#standalone-home-configurations)
 
 ## The problem
 
@@ -160,7 +161,34 @@ Some platforms are configured by default, if a platform you want to use isn't in
 
 ## Getting started
 
-Firstly, configure the `system` & `systemPlatform` for each of your hosts:
+**bundle** is a [flake-parts](https://flake.parts/) module. Add it to your inputs and import it into your flake:
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    bundle.url = "github:different-name/bundle-of-nix";
+  };
+
+  outputs =
+    inputs@{ flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [ inputs.bundle.flakeModules.default ];
+      systems = [ "x86_64-linux" ];
+
+      bundle = {
+        # your hosts & users go here
+      };
+    };
+}
+```
+
+Then configure each of your hosts. `systemPlatform` picks the system to build. Leave it unset for a [system-less host](#standalone-home-configurations):
 
 ```nix
 {
