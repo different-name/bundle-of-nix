@@ -108,7 +108,7 @@ In **bundle**, hosts are configured in the context of a user. This means configu
       };
     };
 
-    nero = {
+    alice = {
       shared = { ... };
       hosts = {
         potassium = { ... };
@@ -189,7 +189,7 @@ Then add your configuration for each user, here's an example configuration:
         };
       };
 
-      nero = { ... };
+      alice = { ... };
     };
   };
 }
