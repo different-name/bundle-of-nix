@@ -7,13 +7,21 @@ let
         enableOptionPath = optionPath ++ [ "enable" ];
       in
       {
-        imports = lib.singleton (
-          { config, ... }:
-          {
-            options = lib.setAttrByPath enableOptionPath (lib.mkEnableOption "${lib.last optionPath} config");
-            config = lib.mkIf (lib.getAttrFromPath enableOptionPath config) moduleConfig;
-          }
-        );
+        imports = (moduleConfig.imports or [ ]) ++ [
+          { options = lib.setAttrByPath optionPath (moduleConfig.options or { }); }
+          (
+            { config, ... }:
+            {
+              options = lib.setAttrByPath enableOptionPath (lib.mkEnableOption "${lib.last optionPath} config");
+              config = lib.mkIf (lib.getAttrFromPath enableOptionPath config) (
+                removeAttrs moduleConfig [
+                  "imports"
+                  "options"
+                ]
+              );
+            }
+          )
+        ];
       };
 
     transpose =
