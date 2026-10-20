@@ -76,7 +76,7 @@ in
               };
 
               extraConfig = lib.mkOption {
-                type = types.raw;
+                type = types.functionTo types.deferredModule;
                 default = _: { };
                 description = ''
                   Function to generate a system-level configuration module for this platform
@@ -109,7 +109,7 @@ in
         };
 
         extraConfigOption = {
-          type = types.raw;
+          type = types.functionTo types.deferredModule;
           default = _: { };
           description = ''
             Function to generate a system-level configuration module for this platform
@@ -159,7 +159,7 @@ in
                 };
 
                 extraHomeConfig = lib.mkOption {
-                  type = types.raw;
+                  type = types.functionTo types.deferredModule;
                   default = _: { };
                   description = ''
                     Function to generate a home-level configuration module for this platform
