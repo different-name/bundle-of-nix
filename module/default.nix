@@ -36,6 +36,10 @@ in
 
   config.flake =
     let
+      throwOnErrors =
+        errors: value:
+        if errors != [ ] then throw "bundle:\n  ${lib.concatStringsSep "\n  " errors}" else value;
+
       # a host missing from bundle.hosts would silently drop the user's config for it
       unknownHostErrors = lib.concatLists (
         lib.mapAttrsToList (
@@ -69,16 +73,19 @@ in
             in
             [ extraConfig ] ++ sysBundle.${sysPlatform.namespace};
 
+          isUsed = homePlatform: sysBundle.${homePlatform.namespace} != [ ];
+          hasSystemModule = homePlatform: lib.hasAttr sysPlatformAttr homePlatform.attachTo;
+
           # home-platforms that are in use, and have a usable module
-          usedHomePlatforms = lib.filter (
+          usedHomePlatforms = lib.filter (homePlatform: isUsed homePlatform && hasSystemModule homePlatform) (
+            lib.attrValues cfg.homePlatforms
+          );
+
+          # a used home-platform with no module here would otherwise be dropped silently
+          unattachedErrors = lib.concatMap (
             homePlatform:
-            let
-              # does the home-platform have any configuration for this host?
-              isUsed = sysBundle.${homePlatform.namespace} != [ ];
-              # does the home-platform provide a module for this system-platform?
-              hasSystemModule = lib.hasAttr sysPlatformAttr homePlatform.attachTo;
-            in
-            isUsed && hasSystemModule
+            lib.optional (isUsed homePlatform && !hasSystemModule homePlatform)
+              "bundle host \"${hostAttr}\": home-platform \"${homePlatform.namespace}\" has configuration but no module for system-platform \"${sysPlatformAttr}\""
           ) (lib.attrValues cfg.homePlatforms);
 
           # configuration modules to import for home-platform -> user
@@ -124,6 +131,7 @@ in
         in
         {
           inherit sysPlatform;
+          errors = unattachedErrors;
 
           args = {
             inherit specialArgs;
@@ -136,10 +144,10 @@ in
         lib.mapAttrs (
           _: hostConfiguration:
           let
-            inherit (hostConfiguration) sysPlatform args;
+            inherit (hostConfiguration) sysPlatform args errors;
           in
           {
-            ${sysPlatform.flakeAttribute} = sysPlatform.mkSystem args;
+            ${sysPlatform.flakeAttribute} = throwOnErrors errors (sysPlatform.mkSystem args);
           }
         ) hostConfigurations
       );
@@ -208,8 +216,5 @@ in
 
       errors = unknownHostErrors ++ standaloneErrors;
     in
-    if errors != [ ] then
-      throw "bundle:\n  ${lib.concatStringsSep "\n  " errors}"
-    else
-      lib.recursiveUpdate systemConfigurations standaloneHomeConfigurations;
+    throwOnErrors errors (lib.recursiveUpdate systemConfigurations standaloneHomeConfigurations);
 }
