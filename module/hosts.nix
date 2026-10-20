@@ -88,7 +88,10 @@ in
     bundlesByHost = lib.mkOption {
       type = types.attrsOf bundleModule;
       default = lib.mapAttrs (hostAttr: host: {
-        _module.args.bundleInfo = { inherit (host) system; };
+        _module.args.bundleInfo = {
+          inherit (host) system;
+          host = hostAttr;
+        };
 
         imports =
           let
@@ -127,8 +130,12 @@ in
       type = types.attrsOf (types.attrsOf bundleModule);
       default = lib.mapAttrs (
         hostAttr: host:
-        lib.mapAttrs (_: user: {
-          _module.args.bundleInfo = { inherit (host) system; };
+        lib.mapAttrs (userAttr: user: {
+          _module.args.bundleInfo = {
+            inherit (host) system;
+            host = hostAttr;
+            home.user = userAttr;
+          };
 
           imports = [
             user.hosts.${hostAttr}
