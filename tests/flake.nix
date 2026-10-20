@@ -47,8 +47,24 @@
 
                 hosts.foreignbox.system = "x86_64-linux";
 
+                systemPlatforms.nixos.extraConfig =
+                  { host, ... }:
+                  {
+                    environment.etc."extra-config-host".text = host;
+                  };
+
                 users.alice = {
                   shared = {
+                    imports = [
+                      (
+                        { bundleInfo, ... }:
+                        {
+                          nixos.environment.etc."bundle-host".text = bundleInfo.host;
+                          home-manager.home.sessionVariables.BUNDLE_USER = bundleInfo.home.user;
+                        }
+                      )
+                    ];
+
                     nixos.system.stateVersion = "24.11";
                     home-manager.home.stateVersion = "24.11";
                   };
@@ -81,6 +97,11 @@
               "host-specific nixos config is applied" = sys.networking.hostName == "testhost";
               "shared nixos config is merged in" = sys.system.stateVersion == "24.11";
               "host platform is set from the host's system" = sys.nixpkgs.hostPlatform.system == "x86_64-linux";
+              "extraConfig merges with the platform's own" =
+                sys.environment.etc."extra-config-host".text == "testhost";
+              "bundleInfo carries the host name" = sys.environment.etc."bundle-host".text == "testhost";
+              "bundleInfo carries the user name" =
+                sys.home-manager.users.alice.home.sessionVariables.BUNDLE_USER == "alice";
               "the system user account is present" = sys.users.users ? alice;
               "system-less host builds a standalone home configuration" =
                 example.homeConfigurations ? "alice@foreignbox";
