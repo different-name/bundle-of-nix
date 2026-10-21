@@ -145,7 +145,7 @@ in
             inherit (hostConfiguration) sysPlatform args errors;
           in
           {
-            ${sysPlatform.flakeAttribute} = throwOnErrors errors (sysPlatform.mkSystem args);
+            ${sysPlatform.flakeAttribute} = throwOnErrors (globalErrors ++ errors) (sysPlatform.mkSystem args);
           }
         ) hostConfigurations
       );
@@ -189,10 +189,12 @@ in
                   extraHomeConfig = withSystemExtraArgs host.system extraArgs homePlatform.extraHomeConfig;
                 in
                 {
-                  ${standalone.flakeAttribute}."${userAttr}@${hostAttr}" = standalone.mkSystem {
-                    inherit pkgs specialArgs;
-                    modules = [ extraHomeConfig ] ++ homeModules;
-                  };
+                  ${standalone.flakeAttribute}."${userAttr}@${hostAttr}" = throwOnErrors globalErrors (
+                    standalone.mkSystem {
+                      inherit pkgs specialArgs;
+                      modules = [ extraHomeConfig ] ++ homeModules;
+                    }
+                  );
                 }
               ) (usedHomeModules hostAttr homePlatform)
             ) standaloneHomePlatforms
@@ -200,7 +202,8 @@ in
         ) systemlessHosts
       );
 
-      errors = unknownHostErrors ++ standaloneErrors;
+      # raised where a configuration is built, so the other flake outputs stay usable
+      globalErrors = unknownHostErrors ++ standaloneErrors;
     in
-    throwOnErrors errors (lib.recursiveUpdate systemConfigurations standaloneHomeConfigurations);
+    lib.recursiveUpdate systemConfigurations standaloneHomeConfigurations;
 }
