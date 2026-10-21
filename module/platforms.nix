@@ -65,7 +65,7 @@ in
                 description = ''
                   Function to generate specialArgs for this platform
 
-                  Arguments passed are the same as flake-part's withSystem, with the addition of `host`
+                  Arguments passed are the same as flake-parts' withSystem, with the addition of `host`
                 '';
                 example = lib.literalExpression ''
                   { inputs, inputs', self, self', ... }:
@@ -81,7 +81,7 @@ in
                 description = ''
                   Function to generate a system-level configuration module for this platform
 
-                  Arguments passed are the same as flake-part's withSystem, with the addition of `host`
+                  Arguments passed are the same as flake-parts' withSystem, with the addition of `host`
                 '';
                 example = lib.literalExpression ''
                   { host, ... }:
@@ -114,7 +114,7 @@ in
           description = ''
             Function to generate a system-level configuration module for this platform
 
-            Arguments passed are the same as flake-part's withSystem, with the addition of `host`
+            Arguments passed are the same as flake-parts' withSystem, with the addition of `host`
           '';
           example = lib.literalExpression ''
             { inputs, inputs', self, self', ... }:
@@ -156,7 +156,7 @@ in
                             description = ''
                               Function to generate a system-level configuration module for this attachment, merged with the home-platform's extraConfig
 
-                              Arguments passed are the same as flake-part's withSystem, with the addition of `host`
+                              Arguments passed are the same as flake-parts' withSystem, with the addition of `host`
                             '';
                           }
                         );
@@ -173,7 +173,7 @@ in
                   description = ''
                     Function to generate a home-level configuration module for this platform
 
-                    Arguments passed are the same as flake-part's withSystem, with the addition of `host` and `user`
+                    Arguments passed are the same as flake-parts' withSystem, with the addition of `host` and `user`
                   '';
                   example = lib.literalExpression ''
                     { user, ... }:
@@ -208,7 +208,7 @@ in
                           description = ''
                             Function to generate specialArgs for a standalone home configuration
 
-                            Arguments passed are the same as flake-part's withSystem, with the addition of `host` and `user`
+                            Arguments passed are the same as flake-parts' withSystem, with the addition of `host` and `user`
                           '';
                         };
                       };
