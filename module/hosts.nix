@@ -17,7 +17,7 @@ let
   ];
 
   bundleModule = types.submoduleWith {
-    description = "Nixxy module";
+    description = "bundle module";
     class = "bundle";
     specialArgs = {
       inherit inputs self bundleLib;
