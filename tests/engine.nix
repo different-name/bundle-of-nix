@@ -186,6 +186,29 @@ let
     };
   };
 
+  standaloneWith =
+    homeConfig:
+    evalWith {
+      bundle = {
+        hosts.box.system = "x86_64-linux";
+        homePlatforms.home-manager.standalone = {
+          mkSystem = lib.mkForce (args: {
+            inherit args;
+          });
+          specialArgs = lib.mkForce ({ host, user, ... }: { inherit host user; });
+        };
+        users.me.hosts.box = homeConfig;
+      };
+    };
+
+  standaloneHome =
+    (standaloneWith { home-manager.homeBit = true; }).config.flake.homeConfigurations."me@box";
+  unbuildableHome =
+    (standaloneWith {
+      home-manager.homeBit = true;
+      hjem.homeBit = true;
+    }).config.flake.homeConfigurations."me@box";
+
   mixedAlpha = mixed.config.flake.stubConfigurations.alpha;
   homeUsers =
     configuration:
@@ -289,6 +312,22 @@ let
     {
       name = "host-level enable is true when any user has it on";
       ok = (evalSystem mixedAlpha).homeOn;
+    }
+    {
+      name = "standalone specialArgs carry the host and user names";
+      ok =
+        standaloneHome.args.specialArgs == {
+          host = "box";
+          user = "me";
+        };
+    }
+    {
+      name = "standalone build includes the user's home config";
+      ok = lib.elem { homeBit = true; } standaloneHome.args.modules;
+    }
+    {
+      name = "throws on system-less home config with no standalone builder";
+      ok = !(builtins.tryEval unbuildableHome).success;
     }
   ];
 
