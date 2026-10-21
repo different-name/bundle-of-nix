@@ -202,8 +202,19 @@ in
         ) systemlessHosts
       );
 
+      idleHostErrors = lib.concatLists (
+        lib.mapAttrsToList (
+          hostAttr: _:
+          lib.optional
+            (lib.all (
+              homePlatform: homePlatform.standalone == null || usedHomeModules hostAttr homePlatform == { }
+            ) (lib.attrValues cfg.homePlatforms))
+            "bundle host \"${hostAttr}\": no systemPlatform and no standalone home configuration, nothing to build"
+        ) systemlessHosts
+      );
+
       # raised where a configuration is built, so the other flake outputs stay usable
-      globalErrors = unknownHostErrors ++ standaloneErrors;
+      globalErrors = unknownHostErrors ++ standaloneErrors ++ idleHostErrors;
     in
     lib.recursiveUpdate systemConfigurations standaloneHomeConfigurations;
 }
