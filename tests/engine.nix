@@ -69,7 +69,19 @@ let
     };
   };
 
-  badThrows = !(builtins.tryEval bad.config.flake).success;
+  badThrows = !(builtins.tryEval bad.config.flake.stubConfigurations.alpha).success;
+  badOutputsSurvive = (builtins.tryEval (builtins.attrNames bad.config.flake)).success;
+
+  idle = evalWith {
+    bundle = {
+      hosts.alpha = host;
+      hosts.ghost.system = "x86_64-linux";
+      users.me.hosts = {
+        alpha.stub.hostBit = true;
+        ghost.stub.hostBit = true;
+      };
+    };
+  };
 
   host = {
     system = "x86_64-linux";
@@ -121,7 +133,11 @@ let
       hosts.alpha = host;
       systemPlatforms.stub.extraConfig = { host, ... }: { extraHost = host; };
       homePlatforms.home-manager = {
-        attachTo.stub.module = { };
+        attachTo.stub = {
+          module = { };
+          extraConfig = _: { attachBit = true; };
+        };
+        extraConfig = _: { homePlatformBit = true; };
         extraHomeConfig = _: { };
       };
       users.me.hosts.alpha =
@@ -163,7 +179,7 @@ let
       homePlatforms.home-manager.attachTo.stub.module = { };
       shared = { config, ... }: { stub.homeOn = config.homePlatforms.home-manager.enable; };
       users.me.hosts.alpha = {
-        homePlatforms.home-manager.enable = false;
+        homePlatforms.home-manager.enable = lib.mkForce false;
         home-manager.meBit = true;
       };
       users.other.hosts.alpha.home-manager.otherBit = true;
@@ -199,6 +215,18 @@ let
     {
       name = "throws on a user referencing an undeclared host";
       ok = badThrows;
+    }
+    {
+      name = "other flake outputs survive a bundle error";
+      ok = badOutputsSurvive;
+    }
+    {
+      name = "throws for a system-less host that builds nothing";
+      ok = !(builtins.tryEval idle.config.flake.stubConfigurations.alpha).success;
+    }
+    {
+      name = "attachment extraConfig merges with the home-platform's";
+      ok = attachedSystem.attachBit && attachedSystem.homePlatformBit;
     }
     {
       name = "mkEnableModule declares extra options beside enable";
