@@ -109,7 +109,8 @@ in
         homePlatforms = lib.mapAttrs' (
           _: platform:
           lib.nameValuePair platform.namespace {
-            enable = lib.mkForce (
+            # computed from the users, so it outranks mkForce in their modules
+            enable = lib.mkOverride 0 (
               lib.any (bundle: bundle.homePlatforms.${platform.namespace}.enable) (
                 lib.attrValues cfg.bundlesByHostUser.${hostAttr}
               )
