@@ -85,6 +85,8 @@
 
                   hosts.foreignbox.home-manager.home.homeDirectory = "/home/alice";
                 };
+
+                users.bob.hosts.testhost.nixos.users.users.bob.isNormalUser = true;
               };
             };
 
@@ -103,6 +105,7 @@
               "bundleInfo carries the user name" =
                 sys.home-manager.users.alice.home.sessionVariables.BUNDLE_USER == "alice";
               "the system user account is present" = sys.users.users ? alice;
+              "a user without home config gets no home-manager entry" = !(sys.home-manager.users ? bob);
               "system-less host builds a standalone home configuration" =
                 example.homeConfigurations ? "alice@foreignbox";
               "standalone home username defaults to the user" = home.home.username == "alice";

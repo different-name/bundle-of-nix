@@ -130,6 +130,7 @@ let
           stub.info = bundleInfo;
           home-manager.info = bundleInfo;
         };
+      users.other.hosts.alpha.stub.otherBit = true;
     };
   };
 
@@ -145,6 +146,34 @@ let
       users.me.hosts.alpha.home-manager.homeBit = true;
     };
   };
+
+  disabled = evalWith {
+    bundle = {
+      hosts.alpha = host;
+      users.me.hosts.alpha = {
+        homePlatforms.home-manager.enable = false;
+        home-manager.homeBit = true;
+      };
+    };
+  };
+
+  mixed = evalWith {
+    bundle = {
+      hosts.alpha = host;
+      homePlatforms.home-manager.attachTo.stub.module = { };
+      shared = { config, ... }: { stub.homeOn = config.homePlatforms.home-manager.enable; };
+      users.me.hosts.alpha = {
+        homePlatforms.home-manager.enable = false;
+        home-manager.meBit = true;
+      };
+      users.other.hosts.alpha.home-manager.otherBit = true;
+    };
+  };
+
+  mixedAlpha = mixed.config.flake.stubConfigurations.alpha;
+  homeUsers =
+    configuration:
+    lib.concatMap (module: lib.attrNames (module.home-manager.users or { })) configuration.args.modules;
 
   cases = [
     {
@@ -216,6 +245,22 @@ let
     {
       name = "throws on home config with no module for the system-platform";
       ok = !(builtins.tryEval unattached.config.flake.stubConfigurations.alpha).success;
+    }
+    {
+      name = "a user without home config gets no home entry";
+      ok = homeUsers attachedAlpha == [ "me" ];
+    }
+    {
+      name = "drops home config when the platform is turned off";
+      ok = homeUsers mixedAlpha == [ "other" ];
+    }
+    {
+      name = "a turned off platform needs no module for the system-platform";
+      ok = (builtins.tryEval disabled.config.flake.stubConfigurations.alpha).success;
+    }
+    {
+      name = "host-level enable is true when any user has it on";
+      ok = (evalSystem mixedAlpha).homeOn;
     }
   ];
 
