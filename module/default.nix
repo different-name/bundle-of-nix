@@ -80,20 +80,19 @@ in
             in
             [ extraConfig ] ++ sysBundle.${sysPlatform.namespace};
 
-          isUsed = homePlatform: usedHomeModules hostAttr homePlatform != { };
           hasSystemModule = homePlatform: lib.hasAttr sysPlatformAttr homePlatform.attachTo;
-
-          # home-platforms that are in use, and have a usable module
-          usedHomePlatforms = lib.filter (homePlatform: isUsed homePlatform && hasSystemModule homePlatform) (
-            lib.attrValues cfg.homePlatforms
+          used = lib.partition hasSystemModule (
+            lib.filter (homePlatform: usedHomeModules hostAttr homePlatform != { }) (
+              lib.attrValues cfg.homePlatforms
+            )
           );
+          usedHomePlatforms = used.right;
 
           # a used home-platform with no module here would otherwise be dropped silently
-          unattachedErrors = lib.concatMap (
+          unattachedErrors = map (
             homePlatform:
-            lib.optional (isUsed homePlatform && !hasSystemModule homePlatform)
-              "bundle host \"${hostAttr}\": home-platform \"${homePlatform.namespace}\" has configuration but no module for system-platform \"${sysPlatformAttr}\""
-          ) (lib.attrValues cfg.homePlatforms);
+            "bundle host \"${hostAttr}\": home-platform \"${homePlatform.namespace}\" has configuration but no module for system-platform \"${sysPlatformAttr}\""
+          ) used.wrong;
 
           # system modules from each home-platform that is in use
           # this includes the system module & extraConfig for the home-platform itself e.g.
