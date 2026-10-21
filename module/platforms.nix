@@ -150,7 +150,16 @@ in
                         };
 
                         usersAttrPath = lib.mkOption (usersAttrPathOption // { default = config.usersAttrPath; });
-                        extraConfig = lib.mkOption (extraConfigOption // { default = config.extraConfig; });
+                        extraConfig = lib.mkOption (
+                          extraConfigOption
+                          // {
+                            description = ''
+                              Function to generate a system-level configuration module for this attachment, merged with the home-platform's extraConfig
+
+                              Arguments passed are the same as flake-part's withSystem, with the addition of `host`
+                            '';
+                          }
+                        );
                       };
                     }
                   );

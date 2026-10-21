@@ -104,9 +104,10 @@ in
             let
               attachment = homePlatform.attachTo.${sysPlatformAttr};
 
-              extraConfig = withSystemExtraArgs host.system {
-                host = hostAttr;
-              } attachment.extraConfig;
+              extraConfigs = map (withSystemExtraArgs host.system { host = hostAttr; }) [
+                homePlatform.extraConfig
+                attachment.extraConfig
+              ];
 
               inherit (attachment) module usersAttrPath;
 
@@ -123,11 +124,7 @@ in
                 }
               ) (usedHomeModules hostAttr homePlatform);
             in
-            [
-              module
-              extraConfig
-            ]
-            ++ mappedHomeModules
+            [ module ] ++ extraConfigs ++ mappedHomeModules
           ) usedHomePlatforms;
         in
         {
