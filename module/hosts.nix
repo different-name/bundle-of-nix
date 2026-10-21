@@ -53,6 +53,19 @@ let
           ) allPlatforms
         );
       }
+
+      {
+        options.homePlatforms = lib.mapAttrs' (
+          name: platform:
+          lib.nameValuePair platform.namespace {
+            enable = lib.mkOption {
+              type = types.bool;
+              default = true;
+              description = "Whether ${name} is used by this user on this host. Its modules are dropped when false. In host-level configuration it is true when any user has it enabled";
+            };
+          }
+        ) cfg.homePlatforms;
+      }
     ];
   };
 
@@ -92,6 +105,17 @@ in
           inherit (host) system;
           host = hostAttr;
         };
+
+        homePlatforms = lib.mapAttrs' (
+          _: platform:
+          lib.nameValuePair platform.namespace {
+            enable = lib.mkForce (
+              lib.any (bundle: bundle.homePlatforms.${platform.namespace}.enable) (
+                lib.attrValues cfg.bundlesByHostUser.${hostAttr}
+              )
+            );
+          }
+        ) cfg.homePlatforms;
 
         imports =
           let
